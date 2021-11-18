@@ -17,12 +17,19 @@ socket.emit("setNickname",nickname)
 //     scoreUl.appendChild(li)
 // }
 
-// socket.on("updateScore",(data) => {
-//     // scoreUl.removeChild
-//     for(let nickname in data){
-//         createList(`${nickname} : ${data[nickname]}`,"green")
-//     }
-// })
+var ulScore = document.getElementById("scoreUl")
+socket.on("updateScore",(data) => {
+	ulScore.innerHTML = ''
+	for(let key in data){
+		if(!data.hasOwnProperty(key)){
+			continue
+		}
+		var li = document.createElement('li');
+		li.setAttribute("class","list-group-item")
+		li.innerHTML = `${key}       <span class="badge bg-primary rounded-pill">${data[key]}</span>`
+		ulScore.appendChild(li)
+	}
+})
 
 
 
@@ -37,7 +44,7 @@ var userCommand = {
     RIGHT:false,
     DOWN:false,
 }
-var justPressed = false;
+var justPressed = false
 
 class Ball{
     constructor(x,y,r){
@@ -46,7 +53,7 @@ class Ball{
         this.r = r
         this.maxRadius = 50
         this.nickname = nickname
-        this.speed = 5;
+        this.speed = 10;
         this.player = false;
         BALLS.push(this)
     }
@@ -199,7 +206,7 @@ function random(min,max) {
 
 //main loop that runs around 60 times per second
 function mainLoop() {
-    ctx.clearRect(0, 0, 640, 480);
+    ctx.clearRect(0, 0, 840, 680);
 
     BALLS.forEach(b => {
         b.drawBall()
@@ -246,6 +253,12 @@ function gameLogic() {
     if(ball.y > canvas.clientHeight - ball.r){
         ball.y -= ball.speed
     }
+    if(ball.r >= 50){
+       ball.r   = 22;
+  }
+	if(ball.r === 22){
+	ball.speed = 10
+}
 }
 
 function getDistance(x1,y1,x2,y2) {
@@ -253,7 +266,7 @@ function getDistance(x1,y1,x2,y2) {
         y = y1 - y2
     return Math.hypot(x,y) 
 }
-
+    
 function collision(obj1,obj2) {
     let dis = getDistance(
         obj1.x,
@@ -263,11 +276,13 @@ function collision(obj1,obj2) {
     )
     if (dis <= 0 + obj2.r + obj1.r) {
         FOODS.splice(0,1)
+        obj1.speed -= 0.25
         if (obj1.r < 100) {
             obj1.r += 2
         }
         socket.emit("onCollision",{
-            nickname:socket.nickname
+            nickname:socket.nickname,
+	    obj:obj1
         })
         emitUpdate(obj1)
         // food = new Food(random(10,canvas.clientWidth),random(10,canvas.clientHeight),50,"red")
@@ -277,7 +292,7 @@ function collision(obj1,obj2) {
 
 
 socket.on("updatePlayer", (players) => {
-    ctx.clearRect(0, 0, 640, 480);
+    ctx.clearRect(0, 0, 840, 680);
     let playersFound = {};
     for(let id in players){
         if(clientBalls[id] === undefined && id !== socket.id){
@@ -302,7 +317,6 @@ socket.on('food',(data) => {
     if(FOODS.length > 1){
         FOODS.splice(0,1)
     }
-    console.log(FOODS.length)
 })
 
 socket.on("updatePos",(data) => {
